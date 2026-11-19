@@ -1,17 +1,34 @@
 # EEL 4332 Software Setup
 
-## Before You Begin — Update Course Files
+## Before you start — obtain the current repository
 
-If this is your first setup, skip this update check; Part 6 installs Git and clones the repository. If you already have a local copy, open a **WSL/Ubuntu Terminal** and run:
+**Expected branch: `main`.** This is the current `main` assignment. **New students:** install Git in Part 2, then complete [Part 6 — Fork and clone](#part-6--fork-and-clone-the-course-repository) before running repository-dependent commands. Until then, read setup on GitHub; `code .` opens existing files but does not download them. **Already have a copy?** Save your edits, then use [the update guide](../docs/UPDATING_COURSE_REPOSITORY.md) before continuing. Fetch the instructor updates for this branch; a clean status or up-to-date fork alone is insufficient.
+
+## Open in VS Code through WSL
+
+After cloning the repository, open **Windows Terminal / PowerShell**, run `wsl`, then run these commands in **Ubuntu/WSL**:
 
 ```bash
 cd ~/courses/eel4332-autonomous-vehicle-labs
-git status --short
+code .
 ```
 
-**Command breakdown:** `cd` changes to the repository directory; `~` means your Ubuntu home directory. `git status --short` gives a compact list of local changes and prints nothing when the working tree is clean.
+Confirm VS Code shows **WSL: Ubuntu** (or your Ubuntu distribution) in the lower-left corner. Open `lab00_setup/README.md` in Explorer. Choose **Terminal → New Terminal**; when working from this lab directory, run:
 
-If the command prints nothing, run `git pull --rebase`. If it lists files, protect your work first by following [Updating the Course Repository](../docs/UPDATING_COURSE_REPOSITORY.md). Use your actual repository path if you cloned it elsewhere.
+```bash
+cd ~/courses/eel4332-autonomous-vehicle-labs/lab00_setup
+```
+
+Use that Ubuntu terminal for the commands below; follow any later `cd` commands as written. This assumes VS Code is installed on Windows with the **WSL extension**. If the repository is not cloned yet, complete Lab 00's clone step first.
+
+> **Copying ROBOTIS commands:** A leading `$` is a terminal-prompt symbol, not part of the command. Some copy buttons include it. Copy only the command after `$ `, or paste into the editor first and remove that prefix from each command line. For example, `$ sudo apt update` must be entered as:
+>
+> ```bash
+> sudo apt update
+> ```
+>
+> If you see `$: command not found`, remove the leading `$ ` and rerun. **Keep dollar signs inside commands**, such as `$HOME`, `$PWD`, `${TURTLEBOT3_MODEL}`, and `$(...)`; those have a different meaning.
+
 
 ## Goal
 
@@ -27,8 +44,8 @@ Windows 11
         ├── Gazebo Harmonic
         ├── RViz2
         ├── Nav2
-        ├── SLAM Toolbox
-        ├── robot_localization
+        ├── Cartographer
+        ├── TurtleBot3 packages
         └── Python tools
 ```
 
@@ -38,7 +55,7 @@ F1TENTH / RoboRacer Gym is optional and is not required to begin the course. The
 
 Autonomous-vehicle software spans several layers. Ubuntu provides the operating environment; ROS 2 connects software components; Gazebo simulates a physical world and sensors; RViz2 visualizes ROS data; and Nav2 supplies localization, planning, and navigation components. Installing the programs is only the first step—students must also learn how to inspect each layer and the interfaces between them.
 
-Lab 00 installs and verifies those tools. [Lab 1](../lab01_ros2_gazebo_fundamentals/README.md) teaches ROS 2 and Gazebo through small systems, [Lab 2](../lab02_turtlebot_playground/README.md) provides a low-pressure TurtleBot driving playground, Lab 3 models the motion students observed, and Lab 4 combines the ROS and Gazebo ideas in a complete TurtleBot/Nav2 simulation.
+Lab 00 installs and verifies those tools. [Lab 1](../lab01_ros2_gazebo_fundamentals/README.md) teaches ROS 2 and Gazebo through small systems, [Lab 2](../lab02_turtlebot_playground/README.md) provides a low-pressure TurtleBot driving playground, Lab 3 models the motion students observed, and Lab 4 introduces mapping and Lab 5 introduces saved-map Nav2 navigation using official ROBOTIS tutorials.
 
 Resolve missing prerequisites now; otherwise a later algorithm problem can be confused with an installation or environment problem.
 
@@ -277,7 +294,7 @@ rosdep update
 
 Run `sudo rosdep init` only once. If it reports that the default sources list already exists, leave that file in place and continue with `rosdep update`.
 
-Lab 1 provides guided ROS 2 and Gazebo exercises, and Lab 2 provides manual TurtleBot practice before students model its motion in Lab 3 and use the larger TurtleBot/Nav2 system in Lab 4.
+Lab 1 provides guided ROS 2 and Gazebo exercises, and Lab 2 provides manual TurtleBot practice before students model its motion in Lab 3 and use SLAM in Lab 4 and Nav2 in Lab 5.
 
 To source ROS automatically:
 
@@ -323,87 +340,93 @@ The same window opens.
 
 ---
 
-## Part 5 — Install navigation / localization packages
+## Part 5 — Install TurtleBot3 software
 
-**Why this part matters:** Later labs use these packages for mapping, localization, planning, and navigation, so installing them now prevents interruptions later.
+The commands below include the required ROBOTIS Jazzy setup. PC/core packages and simulation sources are separate downloads; both are included. Hardware SBC/OpenCR setup is not needed.
+
+### Install packages (once; skip if the checks already pass)
+
+Use an Ubuntu/WSL terminal, not PowerShell. Keep your existing Ubuntu 24.04, ROS 2 Jazzy, and working modern Gazebo installation. Stop old simulations. Use the system ROS terminal for building; if the course Python environment is active, run `deactivate` first.
 
 ```bash
+source /opt/ros/jazzy/setup.bash
 sudo apt update
-sudo apt install \
-  ros-jazzy-navigation2 \
-  ros-jazzy-nav2-bringup \
-  ros-jazzy-nav2-minimal-tb3-sim \
-  ros-jazzy-slam-toolbox \
-  ros-jazzy-robot-localization
+sudo apt install git python3-colcon-common-extensions python3-rosdep ros-jazzy-ros-gz ros-jazzy-xacro ros-jazzy-cartographer ros-jazzy-cartographer-ros ros-jazzy-navigation2 ros-jazzy-nav2-bringup
+mkdir -p ~/turtlebot3_ws/src
+cd ~/turtlebot3_ws/src
 ```
 
-**Command breakdown:** `apt install` installs the navigation, TurtleBot simulation, SLAM, and localization packages listed after it. The trailing `\` characters make the displayed lines one command.
+Download the official Jazzy sources. These commands preserve existing source directories:
 
-For Lab 00, installing these packages is the only required action in this part. You do **not** need to complete a TurtleBot, Nav2, or SLAM tutorial yet. The course introduces those workflows gradually in later labs using course-tested commands.
+```bash
+for repository in DynamixelSDK turtlebot3_msgs turtlebot3 turtlebot3_simulations; do
+  if [ ! -d "$repository" ]; then
+    git clone -b jazzy "https://github.com/ROBOTIS-GIT/$repository.git"
+  fi
+  git -C "$repository" branch --show-current
+done
+```
 
-<details>
-<summary><strong>Optional references for later labs — not required in Lab 00</strong></summary>
+Each branch check should print `jazzy`. If cloning fails or an existing directory is on another branch, stop and ask the instructor; do not delete it or clone duplicate packages elsewhere. `turtlebot3` supplies the core packages; **`turtlebot3_simulations` separately supplies `turtlebot3_gazebo`**.
 
-The following official pages are useful when you reach navigation and mapping later in the course:
+Install workspace dependencies and build:
 
-- [Nav2 Gazebo setup guide](https://docs.nav2.org/setup_guides/gazebo.html)
-- [TurtleBot 3 Gazebo simulation — Jazzy](https://docs.robotis.com/docs/systems/turtlebot3/simulation/gazebo_simulation/?ros=jazzy)
-- [TurtleBot 3 SLAM simulation — Jazzy](https://docs.robotis.com/docs/systems/turtlebot3/simulation/slam_simulation/?ros=jazzy)
+```bash
+cd ~/turtlebot3_ws
+rosdep update
+rosdep install --from-paths src --ignore-src -r -y --rosdistro jazzy
+colcon build --symlink-install
+```
 
-The ROBOTIS pages use the `turtlebot3_gazebo` package workflow, while the first course labs use the installed `nav2_bringup` and `nav2_minimal_tb3_sim` packages. Do not clone another TurtleBot workspace, install additional packages, or substitute website launch commands for course commands unless the instructor asks you to do so.
+If `rosdep` reports that it is not initialized, run `sudo rosdep init` once, then repeat `rosdep update` and the dependency command. Continue only after dependency installation and the build succeed. Do not use `sudo colcon build`.
 
-When a later lab directs you to one of these pages, confirm that its **Jazzy** tab is selected and return to the course README for the required command and deliverables.
+Reload the environment **after building**:
 
-</details>
+```bash
+source /opt/ros/jazzy/setup.bash
+source ~/turtlebot3_ws/install/setup.bash
+export TURTLEBOT3_MODEL=waffle
+ros2 pkg prefix turtlebot3_gazebo
+ros2 pkg prefix turtlebot3_teleop
+ros2 pkg prefix turtlebot3_cartographer
+ros2 pkg prefix turtlebot3_navigation2
+```
+
+Every check must print an installation path. Sourcing exposes built packages; it does not install missing ones. Robot software belongs in `~/turtlebot3_ws`; student code/results belong in your course fork.
+
+
+Choose only one world at a time. The course uses Waffle in TurtleBot3 World; the complete launch and keyboard commands appear in Lab 2. In each new terminal, repeat the ROS/workspace source commands and `export TURTLEBOT3_MODEL=waffle`. An export in one terminal does not affect another.
+
+References: [ROBOTIS PC Setup](https://docs.robotis.com/docs/systems/turtlebot3/quick_start_guide/pc_setup/?ros=jazzy) and [Gazebo Simulation](https://docs.robotis.com/docs/systems/turtlebot3/simulation/gazebo_simulation/?ros=jazzy). You do not need to follow additional website steps for the required course workflow.
 
 ---
 
-## Part 6 — Clone this repository and enter its root
+## Part 6 — Fork and clone the course repository
 
-**Why this part matters:** Your local clone contains the instructions and starter files, and its Git history lets you receive future course updates.
+**Required before repository-dependent commands:** use your own fork so you can save work and receive instructor corrections. **Expected branch: `main`.** This is the current `main` assignment.
 
-Run these commands in a WSL/Ubuntu Terminal:
+Open [the public course repository](https://github.com/hoanbklucky/eel4332-autonomous-vehicle-labs) on GitHub, click **Fork → Create fork**, and keep its name. For the indoor/outdoor branch, uncheck **Copy the main branch only** if shown; the fetch command below also works for an existing main-only fork.
+
+Replace `YOUR_USERNAME` and run once for a new local copy in **Ubuntu/WSL**:
 
 ```bash
 mkdir -p ~/courses
 cd ~/courses
-git clone https://github.com/hoanbklucky/eel4332-autonomous-vehicle-labs.git
+git clone --branch main https://github.com/YOUR_USERNAME/eel4332-autonomous-vehicle-labs.git
 cd eel4332-autonomous-vehicle-labs
-```
-
-**Command breakdown:** `mkdir -p` creates the course parent directory, `cd` enters it, `git clone` downloads a local repository copy, and the final `cd` enters the new repository root.
-
-If you already cloned the repository, do not clone it again. Enter the existing copy instead:
-
-```bash
-cd ~/courses/eel4332-autonomous-vehicle-labs
-```
-
-**Command breakdown:** `cd` changes directly to the recommended repository location. `~` expands to your Ubuntu home directory.
-
-The **repository root** is the `eel4332-autonomous-vehicle-labs` directory that contains the top-level `README.md`, `requirements.txt`, `lab00_setup/`, and the other lab directories. Confirm your current location:
-
-```bash
-pwd
-ls
-```
-
-**Command breakdown:** `pwd` prints the current location, and `ls` lists its contents. Use both to confirm that you are at the repository root.
-
-`pwd` should end with `/eel4332-autonomous-vehicle-labs`, and the `ls` output should include `requirements.txt`. If you cloned the repository somewhere other than `~/courses`, use that location in the `cd` command.
-
-Inspect the repository and open it through the WSL connection:
-
-```bash
-git status
+git remote add upstream https://github.com/hoanbklucky/eel4332-autonomous-vehicle-labs.git
+git fetch upstream
+git switch main
+git merge --no-edit upstream/main
+git push -u origin main
 git remote -v
 git branch --show-current
 code .
 ```
 
-**Command breakdown:** `git status` summarizes local changes, `git remote -v` shows the connected remote repository, `git branch --show-current` identifies the active branch, and `code .` opens the repository in VS Code.
+Stop on errors. Expect **your fork as origin**, **the instructor repository as upstream**, branch **main**, and **WSL: Ubuntu** in VS Code. Download ZIP, reopening VS Code, or updating VS Code Server does not keep course files synchronized.
 
-The VS Code Explorer should show `lab00_setup`, `lab01_ros2_gazebo_fundamentals`, and the remaining lab folders. The Source Control panel should recognize the Git repository. Run Git commands in integrated WSL/Ubuntu Terminals in this workspace, not from a separate Windows copy of the folder.
+**Already have a clone? Do not clone over it or repeat remote creation.** Save local work and use [existing-clone migration](../docs/UPDATING_COURSE_REPOSITORY.md#2-already-cloned-the-instructor-repository) and the guide's branch-selection/update steps. Before each lab, fetch/merge `upstream/main` and verify inclusion using that guide. VS Code Sync/pulling your fork alone does not fetch instructor changes. Preserve robot Xacro/settings and maps when resolving conflicts.
 
 ---
 
@@ -463,11 +486,12 @@ The command is successful when it ends with `Successfully installed` or reports 
 If an older copy of this repository reports that ROS packages such as `generate-parameter-library-py` or `launch-ros` require `setuptools`, `jinja2`, or `typeguard`, update the repository and run the requirements command again:
 
 ```bash
-git pull
+git fetch upstream
+git merge --no-edit upstream/main
 python -m pip install -r requirements.txt
 ```
 
-**Command breakdown:** `git pull` retrieves course updates from the configured remote, and the pip command synchronizes the active environment with any updated Python requirements. Protect local changes before pulling as described at the beginning of this lab.
+**Command breakdown:** fetch/merge receives instructor updates from `upstream`, and the pip command synchronizes the active environment with any updated Python requirements. Protect local changes before pulling as described at the beginning of this lab.
 
 Those messages come from ROS 2 Python packages exposed by `/opt/ros/jazzy/setup.bash`. The updated requirements install the corresponding helpers inside the isolated course environment. Do not use `sudo pip` and do not delete the ROS installation.
 
@@ -508,6 +532,7 @@ Source ROS 2 and activate the Python environment before running the verification
 ```bash
 source ~/venvs/eel4332/bin/activate
 source /opt/ros/jazzy/setup.bash
+source ~/turtlebot3_ws/install/setup.bash
 chmod +x lab00_setup/verify_installation.sh
 ./lab00_setup/verify_installation.sh
 ```
@@ -523,17 +548,7 @@ If there is no missing, the output should look like below
 
 ## Part 10 — Goosebot
 
-**Why this part matters:** Identifying the simulation-to-hardware boundary prepares you for later Goosebot work without assuming an unverified hardware interface.
-
-Do **not** install Goosebot-specific dependencies during the first week unless instructed.
-
-The final physical deployment will use:
-
-https://github.com/hoanbklucky/goose
-
-The instructor will provide the final ROS 2 branch/package names and network/hardware configuration before the physical-robot project.
-
-Goosebot is a four-wheel skid-steer robot. It has four conventional wheels, each powered by a DC motor, with fixed parallel wheel axes and no geometric steering linkage. Turning requires different left- and right-side wheel velocities and lateral tire slip. Before deployment, the instructor must document how motion commands are mapped to the four motors. The TurtleBot simulation is not an exact Goosebot model; it is used to exercise the ROS 2 autonomy layers before the physical interface is introduced.
+Goosebot autonomous lane following is the course's hardware component. The required [final project](../final_project_simulation/README.md) uses the supplied Goosebot model in Gazebo; follow this branch's current final instructions. Physical Goosebot SLAM/Nav2 deployment is optional and requires separately validated interfaces.
 
 ---
 
@@ -561,7 +576,7 @@ Before Lab 01, you should be able to:
 - [ ] launch Gazebo through `ros_gz_sim`
 - [ ] open RViz2
 - [ ] import NumPy and Matplotlib
-- [ ] clone and edit this repository
+- [ ] fork/clone (or open the private instructor copy), verify branch `main`, and confirm it includes the latest fetched instructor commits
 - [ ] verify `ros2 bag`, `teleop_twist_keyboard`, and `rqt_image_view` are available
 
 After every item passes, continue to [Lab 1 — ROS 2 and Gazebo Fundamentals](../lab01_ros2_gazebo_fundamentals/README.md).

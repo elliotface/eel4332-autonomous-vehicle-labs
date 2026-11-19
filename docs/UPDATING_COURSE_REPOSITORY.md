@@ -1,73 +1,105 @@
-# Updating the Course Repository
+# Fork, clone, select the branch, and keep course files current
 
-Use these steps to get the newest course files without losing your own work. Run all commands in a **WSL/Ubuntu Terminal**.
+Use Ubuntu/WSL and keep the course repository under `~/courses`, separate from ROS workspaces. **Expected branch: `main`.** This is the current `main` assignment. Use the instructor-assigned branch; changing a GitHub browser branch does not change your local files.
 
-## 1. Go to Your Local Course Repository
+## 1. Fork and clone (new students)
 
-If you cloned the repository in the recommended location, run:
+1. Sign in to GitHub, open [the course repository](https://github.com/hoanbklucky/eel4332-autonomous-vehicle-labs), and click **Fork → Create fork** under your account. Keep its name. For a non-main assignment, uncheck **Copy the main branch only** if offered. An existing main-only fork can still receive another branch with the fetch steps below; no second fork is needed.
+2. In Ubuntu/WSL, replace `YOUR_USERNAME` with your actual GitHub username. Run this only for a **new** local copy:
+
+```bash
+mkdir -p ~/courses
+cd ~/courses
+git clone --branch main https://github.com/YOUR_USERNAME/eel4332-autonomous-vehicle-labs.git
+cd eel4332-autonomous-vehicle-labs
+git remote add upstream https://github.com/hoanbklucky/eel4332-autonomous-vehicle-labs.git
+git fetch upstream
+git switch main
+git merge --no-edit upstream/main
+git push -u origin main
+git remote -v
+git branch --show-current
+code .
+```
+
+Stop on any error. `origin` is **your fork** (push work); `upstream` is **the instructor's public repository** (receive updates). The branch must print `main`. Open the cloned folder in VS Code with **WSL: Ubuntu**. Do not use Download ZIP as your working copy: it has no Git history/remotes for updates. Reopening VS Code does not fetch course changes.
+
+## 2. Already cloned the instructor repository?
+
+Keep your files/history; do not delete or reclone over them. Create your fork on GitHub, then run `git remote -v` and `git status`. If `origin` currently points to the instructor and `upstream` does not exist, replace `YOUR_USERNAME` and run:
 
 ```bash
 cd ~/courses/eel4332-autonomous-vehicle-labs
+git remote rename origin upstream
+git remote add origin https://github.com/YOUR_USERNAME/eel4332-autonomous-vehicle-labs.git
+git fetch origin
+git remote -v
 ```
 
-**Command breakdown:** `cd` changes the current directory, and `~` represents your Ubuntu home directory.
+If either remote already exists, inspect it first; correct a URL with `git remote set-url REMOTE URL` rather than adding duplicates. Check both fetch and push URLs. Changing remotes does not alter files or commits. If working from an old ZIP, preserve it separately, clone your fork in a new folder, then review/copy your own work into that clone.
 
-Here, `~` means your Ubuntu home directory, such as `/home/your_username`. If you cloned the repository somewhere else, change the command to that location.
+## 3. Save your work before an update or branch change
 
-## 2. Check for Local Changes
+Save editor buffers. Run `git branch --show-current`, `git status` and `git diff`. Stage intended source/configuration/maps with VS Code's **+** or `git add path/to/file` using actual paths. Then commit:
 
 ```bash
+git commit -m "Save lab work before course update"
+```
+
+Do not include bags, credentials, virtual environments or ROS build/install/log directories. Back up important **ignored** files separately; ordinary commits/stashes do not protect ignored files. Push your current branch to your fork as a backup, using its actual name. Commit saves locally; push uploads. HTTPS uses supported token/credential-manager authentication or use SSH, not your GitHub account password.
+
+If you cannot commit yet, back up important files outside the repository, then `git stash push --include-untracked -m "Before course update"`. Confirm a stash was created. Apply it with `git stash apply` only after the update succeeds, review conflicts, and commit. Keep the stash until satisfied. Do not use `reset --hard`, `clean -fdx`, Discard Changes, or a force push to update.
+
+## 4. Select the instructor-assigned branch
+
+With saved work and a clean working tree:
+
+```bash
+git fetch upstream
+git branch --list
+```
+
+If local `main` exists, run `git switch main`. If absent, create it from the instructor version:
+
+```bash
+git switch --no-track -c main upstream/main
+```
+
+Use **one** of these switch alternatives, not both. Commits saved on your previous branch remain there. They do not automatically move to the new branch. Review which work is relevant before copying/cherry-picking it; ask the instructor if unsure. Do not merge an entire older assignment branch just to move one model edit. After updating, `git push -u origin main` creates/updates this branch in your fork and sets tracking to your fork, not upstream.
+
+## 5. Update before every lab and final-project session
+
+```bash
+cd ~/courses/eel4332-autonomous-vehicle-labs
+git remote -v
+git branch --show-current
 git status --short
 ```
 
-**Command breakdown:** `git status` compares your working files with the current commit; `--short` uses a compact one-line format for each changed file.
-
-This command compares your working files with your most recent local commit:
-
-- **No output** means the tracked files are unchanged. Continue to Step 3.
-- **Listed files** mean you have local changes or new files. Follow Step 4 before pulling.
-
-## 3. Update a Clean Repository
-
-When `git status --short` prints nothing, run:
+Verify branch `main`, correct remotes, and no pending changes before proceeding:
 
 ```bash
-git pull --rebase
+git fetch upstream &&
+git merge --no-edit upstream/main &&
+git merge-base --is-ancestor upstream/main HEAD &&
+echo "Current checkout includes the latest fetched main course commits"
+git log -1 --oneline
 ```
 
-**Command breakdown:** `git pull` downloads and integrates changes from the configured remote branch. `--rebase` reapplies your local commits after the downloaded commits, avoiding an unnecessary merge commit.
-
-Git will either report `Already up to date.` or download and apply newer course files. Pulling updates does **not** submit your lab work.
-
-## 4. Protect Local Work Before Updating
-
-Complete this step **only when `git status --short` lists one or more files**. If the command printed nothing and you already completed Step 3, skip Step 4; there is no local work to stash.
-
-First, make a backup copy of any important work outside the repository. Then temporarily store both tracked and untracked changes:
+Then back up the combined result to your fork:
 
 ```bash
-git stash push --include-untracked -m "My work before course update"
-git pull --rebase
-git stash pop
+git push -u origin main
 ```
 
-**Command breakdown:** `git stash push` temporarily stores tracked and untracked changes; `-m` labels that saved state. After `git pull --rebase` updates the repository, `git stash pop` reapplies the stored work.
+The inclusion check confirms **all commits from the latest successfully fetched instructor branch are in your local history**, even if you also have your own commits. A clean `git status`, `Already up to date` from your fork, or a recent student commit alone does not prove this. Repeat the fetch/update when the instructor announces changes.
 
-`git stash` sets your unfinished changes aside, `git pull --rebase` updates the course files, and `git stash pop` reapplies your changes.
+If your fork has newer commits and rejects the push, fetch `origin`, merge `origin/main`, resolve conflicts, and push again. Do not force-push. VS Code **Sync Changes** / ordinary Pull synchronize the tracked fork; they do not replace fetching `upstream`.
 
-## If Git Reports a Conflict
+## 6. Conflicts, verification and installed software
 
-A conflict means both you and the course update changed the same part of a file. Your work is not automatically lost.
+On a conflict, stop and run `git status`. Use VS Code's Merge Editor to combine both sides, stage resolved files and `git commit` to finish. Do not blindly choose one entire side; it can remove robot settings or new course instructions. `git merge --abort` cancels an in-progress merge. Ask for help if unsure, then rerun the inclusion check after resolving.
 
-1. Run `git status` to identify the conflicted files.
-2. Open each file in VS Code and use the Merge Editor, or resolve the sections marked with `<<<<<<<`, `=======`, and `>>>>>>>`.
-3. Save the resolved file and run `git add path/to/file`.
-4. If Git says a rebase is in progress, run `git rebase --continue`. If the conflict appeared after `git stash pop`, do not run `git rebase --continue`; resolve and stage the files normally.
+Reopen this branch's **local lab README** and use its commands, not an old browser tab, PDF or archived lab folder. Git updates files, not installed ROS packages. For the final: restart for changed SDF/world files; rerun its build helper and source the workspace for model/script/bridge/install changes. Preserve your edited Goosebot source and maps; do not repeat the upstream clone/copy to update the course.
 
-If you are unsure how to resolve a conflict, stop and ask the instructor or teaching assistant. Do not use `git reset --hard`, force a pull, or delete and clone the repository again; those actions can discard your work. If a pull rebase is still in progress and you need to return to the state before the pull, run:
-
-```bash
-git rebase --abort
-```
-
-**Command breakdown:** `git rebase --abort` cancels an in-progress rebase and restores the repository to its state before that rebase began. It does not resolve a conflict caused only by `git stash pop`.
+Official references: [Fork a repository](https://docs.github.com/en/get-started/quickstart/fork-a-repo), [Syncing a fork](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/syncing-a-fork), [VS Code in WSL](https://code.visualstudio.com/docs/remote/wsl).

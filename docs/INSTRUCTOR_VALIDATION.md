@@ -1,102 +1,59 @@
-# Instructor Validation Checklist
+# Instructor validation — course simulation
 
-Complete this checklist before publishing the repository to students.
+Validate on the course WSL installation; upstream tutorials and offline geometry checks do not certify an end-to-end run.
 
-## Core environment
+## Labs 2/4/5 — TurtleBot preparation
 
-- [ ] Ubuntu 24.04 WSL image tested
-- [ ] ROS 2 Jazzy installation tested
-- [ ] Gazebo Harmonic / modern Gazebo launches
-- [ ] `ros_gz` integration tested
-- [ ] RViz2 tested
-- [ ] Nav2 demo tested
-- [ ] SLAM Toolbox tested
-- [ ] robot_localization tested
+- [ ] Verify Ubuntu 24.04, ROS 2 Jazzy, Gazebo Harmonic, and the installed ROBOTIS Jazzy sources.
+- [ ] Map World with Waffle and House with Waffle Pi in separate Cartographer sessions, saving distinct map pairs.
+- [ ] Initialize AMCL on each matching map/model; reach one World goal and two House goals in different rooms, including doorway traversal.
+- [ ] Verify the one-video/short-explanation submission can show both environments clearly.
+- [ ] Check meshes, scans, clock, TF, cancellation, and actual stopping.
 
-## Lab 00
+## Final — Goosebot with supplied LiDAR
 
-- [ ] Git installs inside Ubuntu/WSL and the documented identity checks work
-- [ ] Windows VS Code, Microsoft WSL extension, and `code .` open the Linux repository as a WSL workspace
-- [ ] Microsoft Python extension can select `~/venvs/eel4332/bin/python` inside WSL
-- [ ] `ros2 bag`, `teleop_twist_keyboard`, and `rqt_image_view` are installed and discoverable
-- [ ] Lab 00 verification script passes before the Lab 1 practice workspace is built
+Use [the final README](../final_project_simulation/README.md). The baseline LiDAR/bridge/wheel visualization is supplied by the build helper; pilot that baseline before release. The sensor-settings activity comes after mapping/localization/navigation.
 
-## Lab 01
+- [ ] Build the pinned Goosebot source natively in the course WSL installation.
+- [ ] Verify the supplied 360° LiDAR, scan frame, bridge, mounting clearance and complete robot footprint.
+- [ ] Confirm EKF-only odometry TF and exactly one SLAM/AMCL map-to-odom publisher; no ground-truth global localizer.
+- [ ] Launch both IST and campus, check spawn/physics/rendering, and manually drive the mission routes.
+- [ ] Build a LiDAR SLAM Toolbox map, revisit, save it, and restart cleanly with AMCL/Nav2.
+- [ ] Verify scan alignment, three deliveries and home, and Twist command compatibility.
+- [ ] Test each blocked variant on the original map, including actual obstacle detection and a feasible alternative.
+- [ ] Pilot time/compute demands and starting configuration values before assigning the world.
+- [ ] Verify students can follow the self-contained instructions and meet the simplified video/source/short-explanation submission.
 
-- [ ] `demo_nodes_py`, turtlesim, `rqt_graph`, colcon, and rosdep tested
-- [ ] `eel4332_ros_practice` builds from a clean `~/eel4332_ws`
-- [ ] replace the practice package's placeholder maintainer email and confirm its license metadata
-- [ ] practice launch argument changes the measured `/practice/count` rate
-- [ ] publisher/topic/subscriber relationship appears correctly in `rqt_graph`
-- [ ] `gazebo_practice.sdf` validates and runs with physics, reset, and entity inspection
-- [ ] `/clock` appears in Gazebo Transport and the documented one-way bridge produces a ROS `/clock` message
-- [ ] complete both fundamentals practices once as a new student and confirm the expected duration
+Physical Goosebot SLAM/Nav2, stereo RTAB-Map, mission-client programming, and separate algorithm implementations remain optional.
 
-## Lab 02
 
-- [ ] verify `tb3_simulation_launch.py` accepts `headless:=False use_rviz:=False autostart:=False` on the course image
-- [ ] confirm Gazebo opens without RViz2 and the robot begins in a usable obstacle-course location
-- [ ] confirm `teleop_twist_keyboard` publishes the expected `/cmd_vel` type and moves the simulated robot
-- [ ] confirm the documented stop and speed-reduction keys match the installed teleoperation package
-- [ ] confirm `/odom` remains available without starting localization or navigation
-- [ ] complete every required challenge as a new student and confirm a 45–60 minute duration
+## Goosebot open-arena warm-up pilot
 
-## Lab 03
+After pulling, run final README Step 1b with `warmup/warmup.sdf` and its matching `reference.yaml`. Check low walls and visible robot, lowercase `i/j/l/k` motion at 0.1 m/s, `/cmd_vel`, odometry/TF, `/projected_map`, and the (3.0, -2.5) Nav2 goal. Stop teleop before Nav2. Generated geometry/map consistency and inflated-grid connectivity are offline checks only; Gazebo/Goosebot/Nav2 require a local runtime pilot. Keep the original maze optional and do not use perfect localization for final SLAM/AMCL evidence.
 
-- [ ] verify differential-drive forward-kinematics and odometry starter flow
-- [ ] verify straight, pivot, curved, and in-place wheel-speed cases
-- [ ] verify the odometry-sensitivity experiment and expected metrics
-- [ ] verify pure-Python bicycle starter flow
-- [ ] verify the differential-drive-versus-bicycle-versus-skid-steer comparison prompt
-- [ ] pin F1TENTH/RoboRacer Gym commit or environment only if the optional extension is assigned
-- [ ] verify example trajectory comparison
+- [ ] Run the baseline helper twice: confirm no duplicates, preserve complete customized LiDAR settings, and refuse partial/conflicting edits.
+- [ ] Pilot wheel joint-state visualization and the final single-setting LiDAR observation; it must not gate baseline mapping/localization/navigation.
 
-## Lab 04
 
-- [ ] choose the exact simulation launch command
-- [ ] confirm camera/LiDAR/IMU/odometry topic names
-- [ ] confirm TF frame names
+## Sequenced world startup — local pilot required
 
-## Lab 05
+Offline checks cover explicit-world spawn arguments, server PID detection, create-result callbacks and Python syntax. The previous `gz model` verification gate timed out on the instructor's machine and was removed; it must not block GUI startup. The new ROS launch sequence itself requires Gazebo testing:
 
-- [ ] define the exact sensor-recording/export workflow
-- [ ] provide a reference dataset in case ROS bag collection fails
+- [ ] With no existing server, start IST; confirm server/create precede GUI and `goosebot` is visible in the Entity Tree.
+- [ ] Repeat clean start/stop five times; verify no orphan server remains after Ctrl+C and after GUI close.
+- [ ] Try a second launch while the first runs; confirm it refuses with existing PIDs without affecting the first simulation.
+- [ ] Confirm explicit-world spawning and failure shutdown with campus and both blocked variants.
+- [ ] Confirm camera configuration, /clock, /scan, /joint_states, EKF TF and RViz after delayed GUI startup.
 
-## Lab 06
 
-- [ ] choose the warm-up KF dataset
-- [ ] choose localization/fusion dataset or simulation topics
-- [ ] confirm ground-truth source
 
-## Lab 07
+## Campus mesh normals and shutdown repair
 
-- [ ] pin simulation robot/world
-- [ ] verify `/scan`, `/odom`, TF
-- [ ] verify SLAM launch
-- [ ] verify map-save command
+The campus OBJ generator now supplies explicit unit normals per triangle corner. All 37 regenerated meshes retain their original triangle coordinates/winding; vertex and normal counts agree. Generated baseline/blocked SDF, reference image, and mission files are unchanged. The baseline configuration helper replaces the odometry script's unconditional rclpy.shutdown() with idempotent rclpy.try_shutdown(); syntax and repeat-setup checks passed. Pilot campus rendering, collisions, scans, spawning, and Nav2 on WSL; no Gazebo runtime was available for this repair. An EKF context error during coordinated shutdown may be an independent upstream shutdown race; inspect the first error before the shutdown tail.
 
-## Lab 08
 
-- [ ] provide occupancy grid/map input for A*
-- [ ] verify the required bicycle-model tracking environment
-- [ ] verify F1TENTH only if the optional extension is assigned
-- [ ] define track/path file format
-- [ ] validate the ROS/RViz2 planning-visualization wrapper if that extension is required
+## Saved-map startup and Nav2 RViz correction
 
-## Lab 09
+Course navigation.launch.py validates the saved YAML/image pair and explicitly injects the absolute yaml_filename in temporary Nav2 parameters as well as forwarding map to standard bringup. Standard Jazzy localization source should honor map already; the exact reason the reported installed system retained an empty parameter is unconfirmed. This wrapper removes reliance on only that forwarding path without claiming an upstream bug. The source YAML is preserved. Step 6 and the campus command use the wrapper; navigation RViz uses explicit nav2_default_view.rviz, including Nav2 Goal, rather than a generic or leftover mapping layout. Manual load_map is no longer part of the documented procedure.
 
-- [ ] define supported fault-injection methods
-- [ ] decide which safety state/command students can actually publish
-- [ ] verify baseline mission
-- [ ] validate Nav2 cancellation and command arbitration for simulated safe stop
-- [ ] verify the two-speed collision-approach experiment remains simulation-only
-
-## Final Project
-
-- [ ] verify the TurtleBot Gazebo/Nav2 final simulation
-- [ ] verify Goosebot ROS 2 branch/package
-- [ ] document Goosebot fixed-axis geometry and four-motor skid-steer command mapping
-- [ ] verify Goosebot LiDAR, odometry, TF, motor command interface, and safe stop
-- [ ] measure/freeze Goosebot footprint, speed limits, and motion-controller parameters
-- [ ] verify SLAM and Nav2 on Goosebot
-- [ ] publish hardware-failure fallback policy
+Three offline regression checks pass: blank/stale map parameter override with unrelated settings preserved, early failure for missing map/image, and absolute-image/no-map-server-section support (including paths with spaces). Python/YAML and command syntax checked. Live ROS lifecycle/map publication and RViz plugin startup remain instructor pilot checks; no ROS runtime available here. Confirm auto-loaded /map, nonblank map_server yaml_filename, initial-pose scan alignment, Nav2 Goal and reached feedback after a fresh launch on WSL. No ROS rebuild is needed for repository-local launch/doc changes.

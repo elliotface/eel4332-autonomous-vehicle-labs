@@ -1,17 +1,49 @@
 # Lab 3 — Differential-Drive Odometry and Vehicle Modeling
 
-## Before You Begin — Update Course Files
+## Before you start — use the current course files
 
-In a **WSL/Ubuntu Terminal**, go to your local course repository and check for changes:
+**Expected branch: `main`.** This is the current `main` assignment. First-time user? Fork and clone using [Setup Part 6](../lab00_setup/README.md#part-6--fork-and-clone-the-course-repository). An old ZIP download or an unchanged fork may contain obsolete commands.
+
+In Ubuntu/WSL, save all editor files and check:
 
 ```bash
 cd ~/courses/eel4332-autonomous-vehicle-labs
+git remote -v
+git branch --show-current
 git status --short
 ```
 
-**Command breakdown:** `cd` changes to the repository directory; `~` means your Ubuntu home directory. `git status --short` gives a compact list of local changes and prints nothing when the working tree is clean.
+`origin` must be your GitHub fork; `upstream` must be `hoanbklucky/eel4332-autonomous-vehicle-labs`. The branch must match the expected name. **If the branch differs or status lists changes, stop here:** [save/commit your work and follow the branch/update guide](../docs/UPDATING_COURSE_REPOSITORY.md) before proceeding. Do not discard edits, especially robot Xacro/configuration changes or maps.
 
-If the command prints nothing, run `git pull --rebase`. If it lists files, protect your work first by following [Updating the Course Repository](../docs/UPDATING_COURSE_REPOSITORY.md). Use your actual repository path if you cloned it elsewhere.
+Once on the correct branch with a clean working tree:
+
+```bash
+git fetch upstream &&
+git merge --no-edit upstream/main &&
+git merge-base --is-ancestor upstream/main HEAD &&
+echo "Current checkout includes the latest fetched main course commits"
+git log -1 --oneline
+```
+
+Continue only after the inclusion check succeeds. Reopen **this local README** in VS Code (**WSL: Ubuntu**) and follow it. VS Code Sync or pulling your fork alone does not fetch instructor updates; push your combined commits to your fork after a successful update. A Git update changes files, not installed packages: rebuild only when this lab's setup says it is needed.
+
+## Open in VS Code through WSL
+
+After cloning the repository, open **Windows Terminal / PowerShell**, run `wsl`, then run these commands in **Ubuntu/WSL**:
+
+```bash
+cd ~/courses/eel4332-autonomous-vehicle-labs
+code .
+```
+
+Confirm VS Code shows **WSL: Ubuntu** (or your Ubuntu distribution) in the lower-left corner. Open `lab03_vehicle_modeling/README.md` in Explorer. Choose **Terminal → New Terminal**; when working from this lab directory, run:
+
+```bash
+cd ~/courses/eel4332-autonomous-vehicle-labs/lab03_vehicle_modeling
+```
+
+Use that Ubuntu terminal for the commands below; follow any later `cd` commands as written. This assumes VS Code is installed on Windows with the **WSL extension**. If the repository is not cloned yet, complete Lab 00's clone step first.
+
 
 ## Mission
 
@@ -626,4 +658,4 @@ Do not compare trajectories point by point unless they use the same time samples
 - Check radians versus degrees, wheel angular velocity versus linear wheel-edge speed, and wheel rotation versus vehicle yaw rate.
 - If results change greatly when the time step is halved, investigate integration error before interpreting vehicle behavior.
 
-After completing this lab, continue to [Lab 4 — Autonomous-System Architecture and Sensors](../lab04_system_architecture_sensors/README.md).
+After completing this lab, continue to [Lab 4 - Build a Map with SLAM](../lab04_slam/README.md).

@@ -1,0 +1,48 @@
+{
+  "version": 4,
+  "stops": [
+    {
+      "name": "Home / south entrance lobby centre",
+      "xy": [
+        24.85,
+        0
+      ],
+      "yaw": 3.141592653589793
+    },
+    {
+      "name": "Near 1044",
+      "xy": [
+        -18.3,
+        3.4000000000000004
+      ],
+      "yaw": 0
+    },
+    {
+      "name": "Near 1003",
+      "xy": [
+        19,
+        3.1
+      ],
+      "yaw": 0
+    },
+    {
+      "name": "Near 1066",
+      "xy": [
+        14.700000000000001,
+        -5.5
+      ],
+      "yaw": 0
+    }
+  ],
+  "barrier": {
+    "name": "hall_barrier",
+    "x": 0.5,
+    "y": 8.200000000000001,
+    "w": 2.2,
+    "d": 0.35,
+    "h": 1,
+    "yaw": 1.5707963267948966
+  },
+  "orientation": "north at left; south at right; x right, y up",
+  "scale_note": "Approximate scale and fitted classroom outlines; no evacuation-route geometry."
+}
